@@ -1,0 +1,11 @@
+{
+  "name": "product-service",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {
+    "fs": "0.0.1-security"
+  },
+  "devDependencies": {
+    "serverless-plugin-scripts": "^1.0.2"
+  }
+}
