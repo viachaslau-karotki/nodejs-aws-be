@@ -22,11 +22,14 @@ module.exports.getProductsList = async event => {
       },
       body: file.Body.toString('utf8')
     };
-  } catch (e) {
+  } catch (err) {
     console.log(`Error: ${JSON.stringify(e)}`);
     return {
-      status: 500,
-      error: e
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: err.message
     }
   }
 
