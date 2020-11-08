@@ -25,36 +25,12 @@ provider:
   runtime: nodejs12.x
   stage: dev
   region: eu-central-1
-  iamRoleStatements:
-    - Effect: 'Allow'
-      Action:
-        - 's3:getObject'
-      Resource:
-        Fn::Join:
-          - ''
-          - - 'arn:aws:s3:::'
-            - Ref: WebAppS3Bucket
-            - '/*'
   environment:
-    S3BucketName: ${self:custom.s3BucketName}
-    productListFileName: productList.json
-plugins:
-  - serverless-plugin-scripts
-custom:
-  scripts:
-    hooks:
-      'deploy:finalize': aws s3 sync products s3://${self:custom.s3BucketName}
-  s3BucketName: aws-nodejs-application-resources
-
-resources:
-  Resources:
-    ## Specifying the S3 Bucket
-    WebAppS3Bucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:custom.s3BucketName}
-        VersioningConfiguration:
-          Status: Enabled
+    PG_HOST: 
+    PG_PORT: 
+    PG_DATABASE:
+    PG_USERNAME:
+    PG_PASSWORD: 
 
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
@@ -102,6 +78,14 @@ functions:
             parameters:
               paths:
                 id: true
+  postProduct:
+    handler: postProduct.postProduct
+    events:
+      - http:
+          path: products
+          method: post
+          cors: true
+            
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
