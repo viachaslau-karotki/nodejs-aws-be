@@ -15,8 +15,12 @@ const dbParams = {
 }
 
 module.exports.getProductById = async event => {
+
+  console.log(`Request: ${JSON.stringify(event)}`);
   const pathParam = event.pathParameters.id;
-  const query = `select id, title, description, price, count from products p join stocks s on p.id = s.product_id where p.id = '${pathParam}'`;
+  const query = `select id, title, description, price, count 
+  from products p join stocks s on p.id = s.product_id
+  where p.id = '${pathParam}'`;
 
   const client = new Client(dbParams);
   await client.connect();

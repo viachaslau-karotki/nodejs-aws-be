@@ -15,9 +15,11 @@ const dbParams = {
 }
 
 module.exports.getProductsList = async event => {
-console.log(`Event: ${JSON.stringify(event)}`);
 
-  const query = 'select id, title, description, price, count from products p join stocks s on p.id = s.product_id';
+console.log(`Request: ${JSON.stringify(event)}`);
+
+  const query = `select id, title, description, price, count 
+  from products p join stocks s on p.id = s.product_id`;
 
   const client = new Client(dbParams);
   await client.connect();

@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "dependencies": {
     "fs": "0.0.1-security",
+    "joi": "^17.3.0",
     "pg": "^8.4.2"
   },
   "devDependencies": {
