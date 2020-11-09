@@ -37,7 +37,7 @@ module.exports.postProduct = async event => {
         headers: {
           'Access-Control-Allow-Origin': '*'
         },
-        body: errorResp(error.details)
+        body: JSON.stringify(errorResp(error.details))
       }
   }  
   const postProductsQuery = `with postProducts as (
@@ -48,13 +48,15 @@ module.exports.postProduct = async event => {
   insert into stocks(product_id, count)
   select id, ${body.count} 
   from postProducts
-  returning product_id`;
+  returning product_id;`;
 
   const client = new Client(dbParams);
   await client.connect();
 
   try {
+    await client.query('BEGIN;');
     const {rows: products} = await client.query(postProductsQuery);
+    await client.query('COMMIT;');
     return {
       statusCode: 200,
       headers: {
@@ -63,6 +65,7 @@ module.exports.postProduct = async event => {
       body: JSON.stringify(products[0], null, 2)
     };
   } catch(err) {
+    await client.query('ROLLBACK');
     console.log(`Error: ${JSON.stringify(err)}`);
     return {
       statusCode: 500,
