@@ -1,0 +1,45 @@
+service: import-service
+frameworkVersion: '2'
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: eu-central-1
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action: 's3:listBucket'
+      Resource:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:s3:::'
+            - Ref: ImportS3Bucket
+    - Effect: 'Allow'
+      Action:
+        - 's3:*'
+      Resource:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:s3:::'
+            - Ref: ImportS3Bucket
+            - '/*'
+  environment:
+    bucketName: rc-import-service-bucket
+
+resources:
+  Resources:
+    ## Specifying the S3 Bucket
+    ImportS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.bucketName}
+        AccessControl: PublicRead
+        VersioningConfiguration:
+          Status: Enabled
+
+functions:
+  importHandler:
+    handler: importHandler.import
+    events:
+      - http:
+          path: import
+          method: get
