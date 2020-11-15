@@ -1,29 +1,41 @@
 'use strict';
 
-const AWS = require('aws-sdk');
-const s3 = new AWS.S3();
-
-const bucketName = process.env.S3BucketName;
-const productListFileName = process.env.productListFileName;
+const { Client } = require('pg');
+const { PG_HOST, PG_PORT, PG_DATABASE, PG_USERNAME, PG_PASSWORD } = process.env;
+const dbParams = {
+  host: PG_HOST,
+  port: PG_PORT,
+  database: PG_DATABASE,
+  user: PG_USERNAME,
+  password: PG_PASSWORD,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  connectionTimeoutMillis: 5000
+}
 
 module.exports.getProductsList = async event => {
-  
-  const params = {
-    Bucket: bucketName,
-    Key: productListFileName
-  }
+
+console.log(`Request: ${JSON.stringify(event)}`);
+
+  const query = `select id, title, description, price, count 
+  from products p join stocks s on p.id = s.product_id`;
+
+  const client = new Client(dbParams);
+  await client.connect();
 
   try {
-    const file = await s3.getObject(params).promise();
+    const { rows: result } = await client.query(query);
+    console.log(`Result: ${JSON.stringify(result)}`);
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*'
       },
-      body: file.Body.toString('utf8')
-    };
+      body: JSON.stringify(result,null,2)
+    }
   } catch (err) {
-    console.log(`Error: ${JSON.stringify(e)}`);
+    console.log(`Error: ${JSON.stringify(err)}`);
     return {
       statusCode: 500,
       headers: {
@@ -31,6 +43,8 @@ module.exports.getProductsList = async event => {
       },
       body: err.message
     }
+  } finally {
+    client.end();
   }
 
 };

@@ -1,24 +1,34 @@
 'use strict';
 
-const AWS = require('aws-sdk');
-const s3 = new AWS.S3();
-
-const bucketName = process.env.S3BucketName;
-const productListFileName = process.env.productListFileName;
-
+const { Client } = require('pg');
+const { PG_HOST, PG_PORT, PG_DATABASE, PG_USERNAME, PG_PASSWORD } = process.env;
+const dbParams = {
+  host: PG_HOST,
+  port: PG_PORT,
+  database: PG_DATABASE,
+  user: PG_USERNAME,
+  password: PG_PASSWORD,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  connectionTimeoutMillis: 5000
+}
 
 module.exports.getProductById = async event => {
-  const params = {
-    Bucket: bucketName,
-    Key: productListFileName
-  }
+
+  console.log(`Request: ${JSON.stringify(event)}`);
+  const pathParam = event.pathParameters.id;
+  const query = `select id, title, description, price, count 
+  from products p join stocks s on p.id = s.product_id
+  where p.id = '${pathParam}'`;
+
+  const client = new Client(dbParams);
+  await client.connect();
 
   try {
-    const file = await s3.getObject(params).promise();
-    const productList = JSON.parse(file.Body.toString('utf8'));
-    const pathParam = event.pathParameters.id;
-    const product = productList.filter(product => product.id === pathParam)[0];
-    if (product === undefined) {
+    const { rows: product } = await client.query(query);
+    console.log(`Result: ${JSON.stringify(product)}`);
+    if (product[0] === undefined) {
       return {
         statusCode: 404,
         headers: {
@@ -32,7 +42,7 @@ module.exports.getProductById = async event => {
       headers: {
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(product, null, 2)
+      body: JSON.stringify(product[0], null, 2)
     };
   } catch(err) {
     console.log(`Error: ${JSON.stringify(err)}`);
@@ -43,6 +53,8 @@ module.exports.getProductById = async event => {
       },
       body: err.message
     }
+  } finally {
+    client.end();
   }
 
 };
