@@ -1,6 +1,20 @@
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 const csv = require('csv-parser');
+const sqs = new AWS.SQS({apiVersion: '2012-11-05'});
+
+const sendToSQS = async (product) => {
+    const params = {
+        MessageBody: JSON.stringify(product),
+        QueueUrl: process.env.SQS_URL
+    };
+
+    try {
+        await sqs.sendMessage(params).promise();
+    } catch(err) {
+        console.log(`Error with message: ${err.message}`);
+    }
+}
 
 module.exports.importFileParser = async event => {
     console.log(`Event: ${JSON.stringify(event)}`);
@@ -16,15 +30,19 @@ module.exports.importFileParser = async event => {
       Key: `parsed/${name}`
     };
   try {
-    s3.getObject(params).createReadStream()
-    .pipe(csv())
-    .on('data', (data) => console.log(data))
-    .on('end', () => {
-    console.log('End file');
+    const readStream = s3.getObject(params).createReadStream();
+    await new Promise((resolve, reject) => {
+        readStream.pipe(csv())
+        .on('data', async (data) => await sendToSQS(data))
+        .on('error', (error) => reject(error))
+        .on('end', () => {
+        console.log('End file');
+        resolve();
+        })
     });
-
     await s3.copyObject(copyParams).promise();
     await s3.deleteObject(params).promise();
+
     console.log('Finished');
     return {
       statusCode: 200,
