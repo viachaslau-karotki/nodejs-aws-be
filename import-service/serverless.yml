@@ -42,7 +42,7 @@ provider:
     PG_PORT: 
     PG_DATABASE: 
     PG_USERNAME: 
-    PG_PASSWORD: 
+    PG_PASSWORD:   
     bucketName: rc-import-service-bucket
     SQS_URL:
       Ref: SQSQueue
@@ -90,6 +90,13 @@ functions:
       - http:
           path: import
           method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            arn: "arn:aws:lambda:eu-central-1:761833635337:function:authorization-service-dev-authorization"
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: token
   importFileParser:
     handler: importFileParser.importFileParser
     events:
