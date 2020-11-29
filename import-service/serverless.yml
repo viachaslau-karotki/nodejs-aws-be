@@ -93,7 +93,7 @@ functions:
           cors: true
           authorizer:
             name: authorizer
-            arn: "arn:aws:lambda:eu-central-1:761833635337:function:authorization-service-dev-authorization"
+            arn: "arn:aws:lambda:eu-central-1:761833635337:function:authorization-service-dev-basicAuthorizer"
             resultTtlInSeconds: 0
             identitySource: method.request.header.Authorization
             type: token
