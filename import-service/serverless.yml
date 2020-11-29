@@ -29,8 +29,25 @@ provider:
           - ''
           - - 'arn:aws:s3:::'
             - Ref: ImportS3Bucket
+    - Effect: 'Allow'
+      Action: 'sns:*'
+      Resource:
+        Ref: SNSImportProductTopic
+    - Effect: 'Allow'
+      Action: 'sqs:*'
+      Resource:
+        - Fn::GetAtt: [ SQSQueue, Arn ]
   environment:
+    PG_HOST: 
+    PG_PORT: 
+    PG_DATABASE: 
+    PG_USERNAME: 
+    PG_PASSWORD: 
     bucketName: rc-import-service-bucket
+    SQS_URL:
+      Ref: SQSQueue
+    SNS_URL:
+      Ref: SNSImportProductTopic
 
 resources:
   Resources:
@@ -50,8 +67,21 @@ resources:
               - "*"
               AllowedHeaders:
               - "*"
-
-
+    SQSQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: import-product-queue
+    SNSImportProductTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: import-products-topic
+    SNSSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: karotkiv@gmail.com
+        Protocol: Email
+        TopicArn:
+          Ref: SNSImportProductTopic
 
 functions:
   importProductsFile:
@@ -69,4 +99,14 @@ functions:
           rules:
             - prefix: "uploaded/"
           existing: true
+  catalogBatchProcess:
+    handler: catalogBatchProcess.catalogBatchProcess
+    events:
+      - sqs:
+          batchSize: 5
+          arn:
+            Fn::GetAtt:
+              - SQSQueue
+              - Arn
+      
   
