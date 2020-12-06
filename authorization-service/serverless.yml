@@ -1,0 +1,18 @@
+service: authorization-service
+frameworkVersion: '2'
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: eu-central-1
+
+plugins:
+  - serverless-dotenv-plugin
+functions:
+  basicAuthorizer:
+    handler: authorization.authorize
+    events:
+      - http:
+          path: token
+          method: get
+          cors: true
